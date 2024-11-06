@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'screens/home_screen.dart'; // Importando a tela principal
 
 void main() => runApp(MyApp());
 
@@ -13,6 +14,10 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: LoginPage(),
+      routes: {
+        '/home': (context) =>
+            TaskManager(), // Adicionando a rota para HomeScreen
+      },
     );
   }
 }
@@ -42,10 +47,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.statusCode == 200) {
-        // Login bem-sucedido, exibe a próxima tela
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => LoggedInPage()),
-        );
+        // Login bem-sucedido, exibe a tela principal (HomeScreen)
+        Navigator.of(context)
+            .pushReplacementNamed('/home'); // Redireciona para HomeScreen
       } else {
         // Login falhou, exibe mensagem de erro
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -102,24 +106,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Text('Ver Lista de Usuários'),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// Tela de "Foi" após login bem-sucedido
-class LoggedInPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Tela após login'),
-      ),
-      body: Center(
-        child: Text(
-          'Foi', // Texto exibido
-          style: TextStyle(fontSize: 24),
         ),
       ),
     );

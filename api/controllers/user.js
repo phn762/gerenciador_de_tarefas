@@ -67,3 +67,39 @@ export const loginUser = async (req, res) => {
         return res.status(500).json({ error: "Erro no servidor." });
     }
 };
+
+
+export const getTasks = (_, res) => {
+    const query = "SELECT * FROM crud_flutter.tarefas"; // Mude para o nome correto da sua tabela
+
+    db.query(query, (err, data) => {
+        if (err) return res.json(err);
+
+        return res.status(200).json(data);
+    });
+};
+
+
+export const addTask = async (req, res) => {
+    console.log(req.body); // Verificar se os dados estão chegando corretamente
+    const { nome, data_conclusao, responsavel, resumo, prioridade, area } = req.body;
+
+    try {
+        const q = "INSERT INTO tarefas (nome, data_conclusao, responsavel, resumo, prioridade, area) VALUES (?, ?, ?, ?, ?, ?)";
+
+        // Inserindo os dados no banco
+        const [result] = await db.promise().query(q, [nome, data_conclusao, responsavel, resumo, prioridade, area]);
+        console.log('Resultado da inserção:', result);
+
+        return res.status(200).json({
+            message: "Tarefa adicionada com sucesso!",
+            tarefaId: result.insertId, // Retorna o ID da nova tarefa
+        });
+    } catch (err) {
+        console.error('Erro ao salvar no banco de dados:', err); // Adicionado para logar o erro no terminal
+        return res.status(500).json({
+            message: "Erro ao adicionar tarefa",
+            error: err.message, // Retorna uma mensagem de erro mais clara
+        });
+    }
+};

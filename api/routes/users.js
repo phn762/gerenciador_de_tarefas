@@ -1,12 +1,11 @@
-import express from "express"
-import {getUsers, addUser, loginUser} from "../controllers/user.js"
+import express from "express";
+import { getUsers, addUser, loginUser, addTask } from "../controllers/user.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get ("/usuarios",getUsers)
+router.get("/usuarios", getUsers);
+router.post("/cadastro", addUser);
+router.post("/login", loginUser);
+router.post("/home/tarefas", addTask); // Corrigida a barra inicial
 
-router.post("/cadastro",addUser)
-
-router.post("/login",loginUser)
-
-export default router
+export default router;
