@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// Modelo de Tarefa
 class Task {
   final String name;
   final DateTime deadline;
@@ -22,9 +21,20 @@ class Task {
     required this.summary,
     required this.area,
   });
+
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      name: json['nome'],
+      deadline: DateTime.parse(json['data_conclusao']),
+      priority: json['prioridade'],
+      responsible: json['responsavel'],
+      summary: json['resumo'] ?? 'Resumo não disponível',
+      area: json['area'],
+      isCompleted: false,
+    );
+  }
 }
 
-// Tela de Gerenciamento de Tarefas
 class TaskManager extends StatefulWidget {
   @override
   _TaskManagerState createState() => _TaskManagerState();
@@ -39,7 +49,107 @@ class _TaskManagerState extends State<TaskManager> {
   String taskSummary = '';
   String taskArea = '';
 
-  // Função para abrir o pop-up de adição de tarefa
+  @override
+  void initState() {
+    super.initState();
+    fetchTasks();
+  }
+
+  // Função para buscar as tarefas do banco
+  Future<void> fetchTasks() async {
+    var url = Uri.parse('http://localhost:8000/home/tarefas');
+    var response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      try {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          tasks.clear();
+          tasks.addAll(data.map((json) => Task.fromJson(json)).toList());
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erro ao processar os dados: $e'),
+        ));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Erro ao buscar as tarefas. Status: ${response.statusCode}, Body: ${response.body}'),
+      ));
+    }
+  }
+
+  // Função para adicionar tarefas ao banco
+  Future<void> addTask() async {
+    if (taskName.isNotEmpty &&
+        taskDeadline.isNotEmpty &&
+        taskPriority.isNotEmpty &&
+        taskResponsible.isNotEmpty &&
+        taskSummary.isNotEmpty &&
+        taskArea.isNotEmpty) {
+      try {
+        DateTime parsedDate = DateFormat('dd/MM').parse(taskDeadline);
+
+        var taskData = {
+          'nome': taskName,
+          'data_conclusao': DateFormat('yyyy-MM-dd').format(parsedDate),
+          'responsavel': taskResponsible,
+          'resumo': taskSummary,
+          'prioridade': taskPriority,
+          'area': taskArea,
+        };
+
+        var url = Uri.parse('http://localhost:8000/home/tarefas');
+
+        var response = await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(taskData),
+        );
+
+        if (response.statusCode == 200) {
+          setState(() {
+            tasks.add(Task(
+              name: taskName,
+              deadline: parsedDate,
+              isCompleted: false,
+              priority: taskPriority,
+              responsible: taskResponsible,
+              summary: taskSummary,
+              area: taskArea,
+            ));
+          });
+
+          taskName = '';
+          taskDeadline = '';
+          taskPriority = '';
+          taskResponsible = '';
+          taskSummary = '';
+          taskArea = '';
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Tarefa adicionada com sucesso!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Erro ao adicionar tarefa no backend! Código: ${response.statusCode}')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Data inválida! Use o formato DD/MM.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Preencha todos os campos corretamente!')),
+      );
+    }
+  }
+
   void openAddTaskDialog() {
     showDialog(
       context: context,
@@ -104,78 +214,6 @@ class _TaskManagerState extends State<TaskManager> {
     );
   }
 
-  // Função para enviar a tarefa para o backend
-  Future<void> addTask() async {
-    if (taskName.isNotEmpty &&
-        taskDeadline.isNotEmpty &&
-        taskPriority.isNotEmpty &&
-        taskResponsible.isNotEmpty &&
-        taskSummary.isNotEmpty &&
-        taskArea.isNotEmpty) {
-      try {
-        DateTime parsedDate = DateFormat('dd/MM').parse(taskDeadline);
-
-        // Dados da tarefa para enviar ao backend
-        var taskData = {
-          'nome': taskName,
-          'data_conclusao': DateFormat('yyyy-MM-dd').format(parsedDate),
-          'responsavel': taskResponsible,
-          'resumo': taskSummary,
-          'prioridade': taskPriority,
-          'area': taskArea,
-        };
-
-        var url = Uri.parse('http://localhost:8000/home/tarefas');
-
-        // Requisição POST para o backend
-        var response = await http.post(
-          url,
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(taskData),
-        );
-
-        if (response.statusCode == 200) {
-          setState(() {
-            tasks.add(Task(
-              name: taskName,
-              deadline: parsedDate,
-              isCompleted: false,
-              priority: taskPriority,
-              responsible: taskResponsible,
-              summary: taskSummary,
-              area: taskArea,
-            ));
-          });
-
-          // Limpa os campos após adicionar a tarefa
-          taskName = '';
-          taskDeadline = '';
-          taskPriority = '';
-          taskResponsible = '';
-          taskSummary = '';
-          taskArea = '';
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Tarefa adicionada com sucesso!')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao adicionar tarefa no backend!')),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Data inválida! Use DD/MM.')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preencha todos os campos corretamente!')),
-      );
-    }
-  }
-
-  // Função para exibir detalhes da tarefa
   void showTaskDetails(Task task) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -184,41 +222,17 @@ class _TaskManagerState extends State<TaskManager> {
     );
   }
 
-  // Função para confirmar a exclusão da tarefa
-  void confirmDeleteTask(Task task) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Excluir Tarefa'),
-          content: Text('Você realmente deseja excluir esta tarefa?'),
-          actions: [
-            TextButton(
-              child: Text('Cancelar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton(
-              child: Text('Excluir'),
-              onPressed: () {
-                setState(() {
-                  tasks.remove(task);
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Gerenciador de Tarefas'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: fetchTasks,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -249,17 +263,6 @@ class _TaskManagerState extends State<TaskManager> {
                     title: Text(task.name),
                     subtitle: Text(
                       'Prazo: ${DateFormat('dd/MM').format(task.deadline)}\nPrioridade: ${task.priority}\nResponsável: ${task.responsible}\nÁrea: ${task.area}',
-                    ),
-                    trailing: Checkbox(
-                      value: task.isCompleted,
-                      onChanged: (value) {
-                        setState(() {
-                          task.isCompleted = value ?? false;
-                          if (task.isCompleted) {
-                            confirmDeleteTask(task);
-                          }
-                        });
-                      },
                     ),
                     onTap: () => showTaskDetails(task),
                   ),

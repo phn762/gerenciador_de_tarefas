@@ -70,7 +70,7 @@ export const loginUser = async (req, res) => {
 
 
 export const getTasks = (_, res) => {
-    const query = "SELECT * FROM crud_flutter.tarefas"; // Mude para o nome correto da sua tabela
+    const query = "SELECT * FROM crud_flutter.tarefas"; // Ajuste para selecionar apenas as colunas desejadas
 
     db.query(query, (err, data) => {
         if (err) return res.json(err);
@@ -78,7 +78,6 @@ export const getTasks = (_, res) => {
         return res.status(200).json(data);
     });
 };
-
 
 export const addTask = async (req, res) => {
     console.log(req.body); // Verificar se os dados estão chegando corretamente
