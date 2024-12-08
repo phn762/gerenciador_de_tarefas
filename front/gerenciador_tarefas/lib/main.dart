@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'screens/home_screen.dart'; // Importando a tela principal
+import 'screens/home_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -15,8 +15,7 @@ class MyApp extends StatelessWidget {
       ),
       home: LoginPage(),
       routes: {
-        '/home': (context) =>
-            TaskManager(), // Adicionando a rota para HomeScreen
+        '/home': (context) => TaskManager(),
       },
     );
   }
@@ -34,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Função para realizar o login consultando o backend
   Future<void> login() async {
-    var url = Uri.parse('http://localhost:8000/login'); // URL do seu backend
+    var url = Uri.parse('http://localhost:8000/login');
 
     try {
       var response = await http.post(
@@ -48,8 +47,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         // Login bem-sucedido, exibe a tela principal (HomeScreen)
-        Navigator.of(context)
-            .pushReplacementNamed('/home'); // Redireciona para HomeScreen
+        Navigator.of(context).pushReplacementNamed('/home');
       } else {
         // Login falhou, exibe mensagem de erro
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
